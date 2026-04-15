@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>5th Grade EFL Learning Hub</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap');
+
+        :root {
+            --bg-color: #e0e5ec;
+            --shadow-light: #ffffff;
+            --shadow-dark: #a3b1c6;
+            --glossy-overlay: linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.05) 100%);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            font-family: 'Fredoka', sans-serif;
+            overflow: hidden;
+            background-color: #f0f0f0;
+        }
+
+        /* Full Screen Background */
+        #main-container {
+            width: 100vw;
+            height: 100vh;
+            /* Fixed path to the background image file */
+            background: #e0e5ec url('master_home_page.png') no-repeat center center;
+            background-size: cover;
+            position: relative;
+            display: flex;
+            justify-content: flex-end; 
+            align-items: flex-end;    
+        }
+
+        /* Iframe Activity Loader */
+        #content-frame {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: none;
+            z-index: 20;
+            background: white;
+        }
+
+        /* Vertical Sidebar (Middle to Bottom) */
+        .button-sidebar {
+            width: 450px; 
+            margin-right: 5%;
+            margin-bottom: 5%;
+            height: 60%; 
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly;
+            gap: 30px; 
+            z-index: 10;
+        }
+
+        /* 3D Glossy Neumorphic Button - Extra Large */
+        .nav-button {
+            position: relative;
+            background: var(--bg-color);
+            border: none;
+            padding: 35px 25px; 
+            border-radius: 30px;
+            font-size: 34px; 
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 12px 12px 20px var(--shadow-dark), 
+                        -12px -12px 20px var(--shadow-light);
+            transition: all 0.15s ease;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            line-height: 1.2;
+            text-align: center;
+        }
+
+        /* Glossy Effect Layer */
+        .nav-button::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--glossy-overlay);
+            border-radius: 30px;
+            pointer-events: none;
+        }
+
+        .nav-button:active {
+            box-shadow: inset 8px 8px 12px var(--shadow-dark), 
+                        inset -8px -8px 12px var(--shadow-light);
+            transform: scale(0.96);
+        }
+
+        /* High Contrast Icons/Colors */
+        .btn-pot { color: #d35400; border-right: 12px solid #d35400; }
+        .btn-fig { color: #2980b9; border-right: 12px solid #2980b9; }
+        .btn-math { color: #27ae60; border-right: 12px solid #27ae60; }
+
+        /* Navigation Controls - Enlarged & Adjusted Position */
+        .controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            flex-direction: column; 
+            gap: 15px;
+            z-index: 100;
+        }
+
+        .ctrl-btn {
+            width: 90px; 
+            height: 90px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.9); 
+            border: 4px solid #fff;
+            font-size: 40px; 
+            cursor: pointer;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s;
+        }
+
+        .ctrl-btn:active {
+            transform: scale(0.9);
+            background: #f0f0f0;
+        }
+
+        .hidden { display: none !important; }
+
+        /* Responsive UI for iPad/Boards */
+        @media (max-width: 1024px) {
+            .button-sidebar { width: 380px; }
+            .nav-button { font-size: 28px; padding: 25px; }
+            .ctrl-btn { width: 75px; height: 75px; font-size: 32px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="main-container">
+        <!-- Floating Controls -->
+        <div class="controls">
+            <button class="ctrl-btn" onclick="goHome()" title="Home">🏠</button>
+            <button class="ctrl-btn" id="fs-btn" onclick="toggleFS()" title="Toggle Fullscreen">⛶</button>
+        </div>
+
+        <!-- Vertical Menu on Right -->
+        <div class="button-sidebar" id="main-menu">
+            <button class="nav-button btn-pot" onclick="launch('COOKING2/index.html')">
+                🍲 PICK A POT
+            </button>
+            <button class="nav-button btn-fig" onclick="launch('INGR2/index.html')">
+                🔎 FIGURE IT OUT!
+            </button>
+            <button class="nav-button btn-math" onclick="launch('ORDER2/index.html')">
+                🍎 FOOD MATH
+            </button>
+        </div>
+
+        <!-- Activity Container -->
+        <iframe id="content-frame" src=""></iframe>
+    </div>
+
+    <script>
+        const frame = document.getElementById('content-frame');
+        const menu = document.getElementById('main-menu');
+        const fsBtn = document.getElementById('fs-btn');
+
+        /**
+         * Loads the specific activity file from its subfolder
+         */
+        function launch(filePath) {
+            frame.src = filePath;
+            frame.style.display = 'block';
+            menu.classList.add('hidden');
+        }
+
+        /**
+         * Clears activity and returns to background menu
+         */
+        function goHome() {
+            frame.src = "";
+            frame.style.display = 'none';
+            menu.classList.remove('hidden');
+        }
+
+        /**
+         * Screen Management (Full Screen Toggle)
+         */
+        function toggleFS() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(e => console.error(e));
+                fsBtn.innerText = "✖";
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                    fsBtn.innerText = "⛶";
+                }
+            }
+        }
+
+        // Keep UI synced if user exits via ESC key
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement) fsBtn.innerText = "⛶";
+        });
+
+        // Prevention for multi-touch interference on interactive boards
+        document.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 1) e.preventDefault();
+        }, { passive: false });
+    </script>
+</body>
+</html>

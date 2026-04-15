@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Perfect Order - Classroom Restaurant Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Quicksand:wght@500;700&display=swap');
+
+        :root {
+            --pos-bg: #f3f4f6;
+            --pos-accent: #ff6b6b;
+            --pos-secondary: #4ecdc4;
+            --pos-dark: #2d3436;
+        }
+
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: #a29bfe;
+            margin: 0;
+            overflow: hidden; /* Prevents body scrolling */
+            user-select: none;
+            height: 100vh;
+        }
+
+        h1, h2, .font-title {
+            font-family: 'Fredoka One', cursive;
+        }
+
+        .pos-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Ensures content fits strictly on screen */
+        }
+
+        .menu-item-card {
+            transition: transform 0.1s active;
+            cursor: pointer;
+        }
+
+        .menu-item-card:active {
+            transform: scale(0.95);
+        }
+
+        .order-row {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .success-overlay {
+            background: rgba(255, 255, 255, 0.95);
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .star-anim {
+            animation: bounce 0.6s infinite alternate;
+        }
+
+        @keyframes bounce {
+            from { transform: translateY(0) scale(1.5); }
+            to { transform: translateY(-40px) scale(1.8); }
+        }
+
+        .timer-warning {
+            color: #ff0000;
+            animation: pulse 0.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
+        /* Responsive scaling for cards to ensure no scrolling */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 1rem;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<div class="pos-container p-4 lg:p-4">
+    <!-- Top Bar - Slightly more compact to save vertical space -->
+    <div class="flex flex-wrap justify-between items-center bg-white rounded-3xl p-4 lg:p-6 shadow-2xl mb-4 border-b-8 border-gray-200">
+        <div class="flex flex-col">
+            <span class="text-gray-400 font-bold uppercase tracking-widest text-lg">Goal</span>
+            <div id="target-amount" class="text-6xl lg:text-7xl font-title text-indigo-600 leading-tight">Target: $0</div>
+        </div>
+        
+        <div class="flex flex-col items-center">
+            <span class="text-gray-400 font-bold uppercase tracking-widest text-lg" id="q-count">Question 1/10</span>
+            <div id="timer-display" class="text-6xl lg:text-7xl font-title text-gray-700 leading-tight">30s</div>
+        </div>
+
+        <div class="flex items-center gap-6">
+            <div class="bg-yellow-100 p-4 rounded-2xl flex items-center gap-4">
+                <span class="text-4xl">⭐</span>
+                <span id="score-display" class="text-5xl font-title text-yellow-600">0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Game Area -->
+    <div class="flex flex-1 gap-6 overflow-hidden mb-2">
+        
+        <!-- Left: Menu Grid - Fixed size to prevent scrolling -->
+        <div class="flex-[3] grid-container">
+            <button onclick="addToOrder('Bread')" class="menu-item-card bg-orange-100 hover:bg-orange-200 p-4 rounded-[2.5rem] border-b-[8px] border-orange-300 flex flex-col items-center justify-center gap-1 h-full">
+                <span class="text-6xl lg:text-7xl">🍞</span>
+                <span class="text-2xl font-bold">Bread</span>
+                <span id="price-Bread" class="text-5xl lg:text-6xl font-title text-orange-600">$0</span>
+            </button>
+            <button onclick="addToOrder('Salad')" class="menu-item-card bg-green-100 hover:bg-green-200 p-4 rounded-[2.5rem] border-b-[8px] border-green-300 flex flex-col items-center justify-center gap-1 h-full">
+                <span class="text-6xl lg:text-7xl">🥗</span>
+                <span class="text-2xl font-bold">Salad</span>
+                <span id="price-Salad" class="text-5xl lg:text-6xl font-title text-green-600">$0</span>
+            </button>
+            <button onclick="addToOrder('Soup')" class="menu-item-card bg-yellow-100 hover:bg-yellow-200 p-4 rounded-[2.5rem] border-b-[8px] border-yellow-300 flex flex-col items-center justify-center gap-1 h-full">
+                <span class="text-6xl lg:text-7xl">🥣</span>
+                <span class="text-2xl font-bold">Soup</span>
+                <span id="price-Soup" class="text-5xl lg:text-6xl font-title text-yellow-600">$0</span>
+            </button>
+            <button onclick="addToOrder('Noodles')" class="menu-item-card bg-red-100 hover:bg-red-200 p-4 rounded-[2.5rem] border-b-[8px] border-red-300 flex flex-col items-center justify-center gap-1 h-full">
+                <span class="text-6xl lg:text-7xl">🍜</span>
+                <span class="text-2xl font-bold">Noodles</span>
+                <span id="price-Noodles" class="text-5xl lg:text-6xl font-title text-red-600">$0</span>
+            </button>
+            <button onclick="addToOrder('Chicken')" class="menu-item-card bg-amber-100 hover:bg-amber-200 p-4 rounded-[2.5rem] border-b-[8px] border-amber-300 flex flex-col items-center justify-center gap-1 h-full">
+                <span class="text-6xl lg:text-7xl">🍗</span>
+                <span class="text-2xl font-bold">Chicken</span>
+                <span id="price-Chicken" class="text-5xl lg:text-6xl font-title text-amber-600">$0</span>
+            </button>
+            <div class="bg-indigo-50 p-4 rounded-[2.5rem] border-dashed border-4 border-indigo-200 flex items-center justify-center text-indigo-300 font-bold text-center italic text-2xl h-full">
+                High<br>Visibility
+            </div>
+        </div>
+
+        <!-- Right: Order Summary -->
+        <div class="flex-[2] flex flex-col bg-white rounded-[2.5rem] shadow-2xl border-t-[8px] border-gray-100 overflow-hidden">
+            <div class="bg-gray-800 p-4 text-white font-title text-center text-2xl tracking-[0.2em]">
+                MY TICKET
+            </div>
+            
+            <div id="order-list" class="flex-1 overflow-y-auto p-6 space-y-4">
+                <!-- Items go here -->
+                <div class="text-center text-gray-300 mt-10 italic text-2xl">Tap food...</div>
+            </div>
+
+            <div class="p-6 bg-gray-50 border-t-8 border-gray-100">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-3xl font-bold text-gray-400 uppercase">Total</span>
+                    <span id="current-total" class="text-6xl font-title text-gray-800">$0</span>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <button onclick="clearOrder()" class="bg-gray-200 hover:bg-gray-300 text-gray-600 font-bold py-6 rounded-2xl text-2xl transition">
+                        CLEAR
+                    </button>
+                    <button onclick="submitOrder()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-title text-3xl py-6 rounded-2xl shadow-xl transform active:scale-95 transition">
+                        SUBMIT
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Overlay -->
+<div id="success-overlay" class="success-overlay">
+    <div class="star-anim text-[12rem] mb-10">⭐</div>
+    <h2 id="feedback-title" class="text-8xl font-title text-green-500 mb-4">CORRECT!</h2>
+    <p class="text-4xl font-bold text-gray-600">Perfect!</p>
+</div>
+
+<!-- Game Over Overlay -->
+<div id="game-over" class="hidden fixed inset-0 bg-indigo-900 z-[200] flex flex-col items-center justify-center text-white text-center p-10">
+    <h2 class="text-9xl font-title mb-6">WELL DONE!</h2>
+    <p class="text-5xl mb-16">Final Score: <span id="final-score" class="font-title text-yellow-400">0/10</span></p>
+    <button onclick="location.reload()" class="bg-white text-indigo-900 px-20 py-10 rounded-full font-title text-5xl hover:bg-yellow-400 transition transform hover:scale-105">
+        PLAY AGAIN
+    </button>
+</div>
+
+<!-- Message Toast -->
+<div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-red-600 text-white px-10 py-5 rounded-full font-bold text-3xl shadow-2xl opacity-0 transition-opacity pointer-events-none z-[250]">
+    Try again!
+</div>
+
+<script>
+    // Audio Context
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSound(freq, type = 'sine', duration = 0.1) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    }
+
+    const playCorrect = () => { playSound(523, 'square', 0.15); setTimeout(() => playSound(659, 'square', 0.25), 100); };
+    const playWrong = () => { playSound(220, 'sawtooth', 0.4); };
+    const playClick = () => { playSound(800, 'sine', 0.05); };
+
+    // Game State
+    let currentQuestion = 1;
+    let score = 0;
+    let targetAmount = 0;
+    let currentTotal = 0;
+    let timer = 30; 
+    let timerInterval = null;
+    let gameActive = true;
+    let currentOrder = {}; 
+
+    const foodItems = [
+        { name: 'Bread', icon: '🍞', basePrice: 10 },
+        { name: 'Salad', icon: '🥗', basePrice: 20 },
+        { name: 'Soup', icon: '🥣', basePrice: 50 },
+        { name: 'Noodles', icon: '🍜', basePrice: 80 },
+        { name: 'Chicken', icon: '🍗', basePrice: 120 }
+    ];
+
+    let itemPrices = {};
+
+    function initQuestion() {
+        if (currentQuestion > 10) {
+            endGame();
+            return;
+        }
+
+        let numTypes = currentQuestion <= 3 ? 1 : (currentQuestion <= 7 ? 2 : 3);
+        
+        foodItems.forEach(item => {
+            let variance = Math.floor(Math.random() * 5) * 5;
+            itemPrices[item.name] = item.basePrice + variance;
+            document.getElementById(`price-${item.name}`).innerText = `$${itemPrices[item.name]}`;
+        });
+
+        let possibleTotal = 0;
+        const shuffled = [...foodItems].sort(() => 0.5 - Math.random());
+        for (let i = 0; i < numTypes; i++) {
+            let qty = Math.floor(Math.random() * (currentQuestion <= 3 ? 2 : 3)) + 1;
+            possibleTotal += (itemPrices[shuffled[i].name] * qty);
+        }
+
+        targetAmount = possibleTotal;
+        document.getElementById('target-amount').innerText = `Target: $${targetAmount}`;
+        document.getElementById('q-count').innerText = `Question ${currentQuestion}/10`;
+        
+        clearOrder();
+        timer = 30; 
+        updateTimerUI();
+        clearInterval(timerInterval);
+        timerInterval = null;
+        gameActive = true;
+    }
+
+    function updateTimerUI() {
+        const display = document.getElementById('timer-display');
+        display.innerText = `${timer}s`;
+        if (timer <= 5) {
+            display.classList.add('timer-warning');
+        } else {
+            display.classList.remove('timer-warning');
+        }
+    }
+
+    function startTimer() {
+        if (timerInterval) return;
+        timerInterval = setInterval(() => {
+            timer--;
+            updateTimerUI();
+            if (timer <= 0) {
+                clearInterval(timerInterval);
+                playWrong();
+                showToast("Time's up!");
+                setTimeout(() => {
+                    currentQuestion++;
+                    initQuestion();
+                }, 2000);
+            }
+        }, 1000);
+    }
+
+    function addToOrder(name) {
+        if (!gameActive) return;
+        playClick();
+        startTimer();
+        currentOrder[name] = (currentOrder[name] || 0) + 1;
+        renderOrder();
+    }
+
+    function removeFromOrder(name) {
+        if (!gameActive) return;
+        playClick();
+        if (currentOrder[name] > 0) {
+            currentOrder[name]--;
+            if (currentOrder[name] === 0) delete currentOrder[name];
+        }
+        renderOrder();
+    }
+
+    function renderOrder() {
+        const container = document.getElementById('order-list');
+        container.innerHTML = '';
+        currentTotal = 0;
+
+        if (Object.keys(currentOrder).length === 0) {
+            container.innerHTML = '<div class="text-center text-gray-300 mt-10 italic text-2xl">Tap food...</div>';
+            document.getElementById('current-total').innerText = '$0';
+            return;
+        }
+
+        for (const [name, qty] of Object.entries(currentOrder)) {
+            const item = foodItems.find(f => f.name === name);
+            const lineTotal = itemPrices[name] * qty;
+            currentTotal += lineTotal;
+
+            const div = document.createElement('div');
+            div.className = "order-row flex justify-between items-center bg-indigo-50 p-4 rounded-xl border-l-4 border-indigo-400";
+            div.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <span class="text-5xl">${item.icon}</span>
+                    <div class="flex flex-col">
+                        <span class="text-2xl font-bold">${name}</span>
+                        <span class="text-xl text-indigo-500 font-bold">${qty}x $${itemPrices[name]}</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span class="text-3xl font-title text-gray-700">$${lineTotal}</span>
+                    <button onclick="removeFromOrder('${name}')" class="bg-red-100 text-red-500 w-12 h-12 rounded-full text-2xl flex items-center justify-center hover:bg-red-200">✕</button>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+        document.getElementById('current-total').innerText = `$${currentTotal}`;
+    }
+
+    function clearOrder() {
+        currentOrder = {};
+        renderOrder();
+    }
+
+    function submitOrder() {
+        if (!gameActive) return;
+        if (currentTotal === targetAmount) {
+            handleSuccess();
+        } else {
+            handleFailure();
+        }
+    }
+
+    function handleSuccess() {
+        gameActive = false;
+        clearInterval(timerInterval);
+        score++;
+        document.getElementById('score-display').innerText = score;
+        playCorrect();
+        const overlay = document.getElementById('success-overlay');
+        overlay.style.display = 'flex';
+        setTimeout(() => {
+            overlay.style.display = 'none';
+            currentQuestion++;
+            initQuestion();
+        }, 1500);
+    }
+
+    function handleFailure() {
+        playWrong();
+        showToast(currentTotal > targetAmount ? "Too much!" : "Too little!");
+    }
+
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.innerText = msg;
+        toast.style.opacity = '1';
+        setTimeout(() => toast.style.opacity = '0', 1500);
+    }
+
+    function endGame() {
+        gameActive = false;
+        clearInterval(timerInterval);
+        const gameOver = document.getElementById('game-over');
+        document.getElementById('final-score').innerText = `${score}/10`;
+        gameOver.classList.remove('hidden');
+    }
+
+    window.onload = initQuestion;
+</script>
+
+</body>
+</html>

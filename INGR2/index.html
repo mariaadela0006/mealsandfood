@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chef's Secret Soup - Classroom Guessing Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Fredoka One', cursive;
+            background-image: url('home_bg.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-color: #f0f9ff; /* Fallback */
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.5rem;
+            user-select: none;
+        }
+
+        /* Container to manage vertical space without scrolling */
+        .game-wrapper {
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .header-section {
+            text-align: center;
+        }
+
+        .pot-container {
+            position: relative;
+            width: 320px;
+            height: 260px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .pot-body {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 180px;
+            background: #ef4444;
+            border-radius: 0 0 120px 120px;
+            border: 10px solid #991b1b;
+            z-index: 2;
+        }
+
+        .pot-lid-area {
+            position: absolute;
+            top: 60px;
+            width: 90%;
+            left: 5%;
+            height: 45px;
+            background: #450a0a;
+            border-radius: 50%;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .soup {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: #f59e0b;
+            top: 5px;
+            animation: boil 2s infinite ease-in-out;
+        }
+
+        @keyframes boil {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(5px); }
+        }
+
+        .bubble {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            animation: bubble-rise 1.5s infinite;
+        }
+
+        @keyframes bubble-rise {
+            0% { transform: translateY(40px) scale(0.5); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(-20px) scale(1.2); opacity: 0; }
+        }
+
+        .steam {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+        }
+
+        .steam-cloud {
+            width: 20px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            filter: blur(5px);
+            animation: steam-float 2s infinite;
+        }
+
+        @keyframes steam-float {
+            0% { transform: translateY(0) scale(1); opacity: 0; }
+            50% { opacity: 0.8; }
+            100% { transform: translateY(-60px) scale(2); opacity: 0; }
+        }
+
+        .ingredient-tag {
+            animation: pop-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: white;
+            border: 6px solid #3b82f6;
+            border-radius: 25px;
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 2.2rem;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+        }
+
+        .ingredient-icon {
+            font-size: 3.5rem;
+        }
+
+        @keyframes pop-in {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .choice-btn {
+            transition: all 0.2s;
+            text-transform: capitalize;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem 1rem;
+        }
+
+        .choice-btn:hover {
+            transform: translateY(-8px);
+            filter: brightness(1.1);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .feedback {
+            font-size: 5rem;
+            text-shadow: 4px 4px 0 #000;
+            animation: bounce 0.5s infinite alternate;
+        }
+
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-25px); }
+        }
+
+        /* Responsive constraints */
+        @media (max-height: 700px) {
+            .pot-container { width: 240px; height: 200px; }
+            .pot-body { height: 140px; }
+            .ingredient-tag { font-size: 1.8rem; padding: 10px 20px; }
+            .ingredient-icon { font-size: 2.5rem; }
+            .choice-btn { font-size: 2rem !important; }
+            .choice-btn span { font-size: 3rem !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-wrapper">
+        <div class="header-section">
+            <h1 class="text-5xl md:text-7xl text-blue-800 bg-white/90 px-10 py-2 rounded-full shadow-md border-4 border-blue-200 inline-block">Chef's Secret Soup!</h1>
+            <p id="round-counter" class="text-2xl md:text-4xl text-gray-900 font-bold mt-3 drop-shadow-sm">Round: 1 / 10</p>
+        </div>
+
+        <!-- The Magic Pot -->
+        <div id="pot" class="pot-container" onclick="revealIngredient()">
+            <div class="steam">
+                <div class="steam-cloud" style="animation-delay: 0s"></div>
+                <div class="steam-cloud" style="animation-delay: 0.5s"></div>
+                <div class="steam-cloud" style="animation-delay: 1s"></div>
+            </div>
+            
+            <div class="pot-lid-area">
+                <div class="soup" id="soup-color">
+                    <div class="bubble" style="left: 20%; animation-delay: 0.2s"></div>
+                    <div class="bubble" style="left: 50%; animation-delay: 0.7s"></div>
+                    <div class="bubble" style="left: 80%; animation-delay: 1.1s"></div>
+                </div>
+            </div>
+            
+            <div class="pot-body">
+                <div class="absolute -left-6 top-10 w-8 h-12 bg-gray-800 rounded-full border-4 border-gray-900"></div>
+                <div class="absolute -right-6 top-10 w-8 h-12 bg-gray-800 rounded-full border-4 border-gray-900"></div>
+            </div>
+        </div>
+
+        <!-- Ingredient List Area -->
+        <div id="ingredient-display" class="flex flex-wrap justify-center items-center w-full max-w-6xl px-4 min-h-[140px]">
+            <!-- Ingredients pop in here -->
+        </div>
+
+        <!-- Answer Choices -->
+        <div class="grid grid-cols-5 gap-4 w-full max-w-7xl px-4">
+            <button onclick="checkAnswer('salad')" class="choice-btn bg-green-500 text-white rounded-3xl text-3xl shadow-xl border-b-[12px] border-green-700">
+                <span class="text-6xl mb-2">🥗</span> Salad
+            </button>
+            <button onclick="checkAnswer('bread')" class="choice-btn bg-orange-400 text-white rounded-3xl text-3xl shadow-xl border-b-[12px] border-orange-600">
+                <span class="text-6xl mb-2">🍞</span> Bread
+            </button>
+            <button onclick="checkAnswer('chicken')" class="choice-btn bg-yellow-500 text-white rounded-3xl text-3xl shadow-xl border-b-[12px] border-yellow-700">
+                <span class="text-6xl mb-2">🍗</span> Chicken
+            </button>
+            <button onclick="checkAnswer('noodles')" class="choice-btn bg-pink-400 text-white rounded-3xl text-3xl shadow-xl border-b-[12px] border-pink-600">
+                <span class="text-6xl mb-2">🍜</span> Noodles
+            </button>
+            <button onclick="checkAnswer('soup')" class="choice-btn bg-red-400 text-white rounded-3xl text-3xl shadow-xl border-b-[12px] border-red-600">
+                <span class="text-6xl mb-2">🥣</span> Soup
+            </button>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="result-modal" class="modal">
+        <div class="bg-white p-12 rounded-[3rem] text-center shadow-2xl border-[12px] border-blue-500 max-w-xl w-full mx-4">
+            <div id="feedback-text" class="feedback mb-10 text-green-500">🌟 Correct! 🌟</div>
+            <button id="modal-btn" onclick="nextRound()" class="bg-blue-500 text-white px-12 py-5 rounded-3xl text-4xl shadow-xl hover:bg-blue-600 transition-transform active:scale-95">Next Round! ➔</button>
+        </div>
+    </div>
+
+    <div id="wrong-modal" class="modal" onclick="this.style.display='none'">
+        <div class="bg-white p-16 rounded-[3rem] text-center shadow-2xl border-[12px] border-red-500">
+            <div class="text-9xl mb-6">❌</div>
+            <div class="text-6xl text-red-600 font-bold">Try again!</div>
+        </div>
+    </div>
+
+    <script>
+        const baseFoods = [
+            { target: 'bread', color: '#fde68a', ingredients: [{name:'Flour',icon:'🌾'},{name:'Water',icon:'💧'},{name:'Yeast',icon:'🧪'},{name:'Salt',icon:'🧂'}] },
+            { target: 'salad', color: '#86efac', ingredients: [{name:'Lettuce',icon:'🥬'},{name:'Tomato',icon:'🍅'},{name:'Cucumber',icon:'🥒'},{name:'Dressing',icon:'🍶'}] },
+            { target: 'chicken', color: '#fbbf24', ingredients: [{name:'Chicken',icon:'🐔'},{name:'Herbs',icon:'🌿'},{name:'Spices',icon:'🌶️'},{name:'Butter',icon:'🧈'}] },
+            { target: 'noodles', color: '#fef3c7', ingredients: [{name:'Wheat',icon:'🌾'},{name:'Egg',icon:'🥚'},{name:'Strands',icon:'〰️'},{name:'Sauce',icon:'🍅'}] },
+            { target: 'soup', color: '#f97316', ingredients: [{name:'Water',icon:'💧'},{name:'Broth',icon:'🥘'},{name:'Veggie',icon:'🥕'},{name:'Spoon',icon:'🥄'}] }
+        ];
+
+        // Create 10 rounds total (2 of each food)
+        let gameData = [...baseFoods, ...baseFoods];
+        gameData.sort(() => Math.random() - 0.5);
+
+        let currentRoundIndex = 0;
+        let revealedCount = 0;
+        let isGameOver = false;
+
+        function initRound() {
+            if (currentRoundIndex >= 10) {
+                showFinalScore();
+                return;
+            }
+
+            const round = gameData[currentRoundIndex];
+            revealedCount = 0;
+            isGameOver = false;
+            
+            document.getElementById('round-counter').innerText = `Round: ${currentRoundIndex + 1} / 10`;
+            document.getElementById('ingredient-display').innerHTML = '';
+            document.getElementById('soup-color').style.backgroundColor = round.color;
+            document.getElementById('result-modal').style.display = 'none';
+            document.getElementById('wrong-modal').style.display = 'none';
+        }
+
+        function revealIngredient() {
+            if (isGameOver) return;
+            const round = gameData[currentRoundIndex];
+            if (revealedCount < round.ingredients.length) {
+                const item = round.ingredients[revealedCount];
+                const tag = document.createElement('div');
+                tag.className = 'ingredient-tag';
+                tag.innerHTML = `<span class="ingredient-icon">${item.icon}</span><span>${item.name}</span>`;
+                document.getElementById('ingredient-display').appendChild(tag);
+                revealedCount++;
+                
+                const pot = document.getElementById('pot');
+                pot.style.transform = 'scale(1.1)';
+                setTimeout(() => pot.style.transform = 'scale(1)', 100);
+            }
+        }
+
+        function checkAnswer(choice) {
+            if (isGameOver) return;
+            const round = gameData[currentRoundIndex];
+            if (choice === round.target) {
+                isGameOver = true;
+                showResult(true);
+            } else {
+                showResult(false);
+            }
+        }
+
+        function showResult(correct) {
+            if (correct) {
+                document.getElementById('feedback-text').innerText = '🌟 Correct! 🌟';
+                document.getElementById('feedback-text').className = 'feedback text-green-500 mb-10';
+                document.getElementById('modal-btn').innerText = currentRoundIndex === 9 ? 'Show Results! ➔' : 'Next Round! ➔';
+                document.getElementById('result-modal').style.display = 'flex';
+            } else {
+                document.getElementById('wrong-modal').style.display = 'flex';
+                setTimeout(() => { document.getElementById('wrong-modal').style.display = 'none'; }, 1200);
+            }
+        }
+
+        function nextRound() {
+            currentRoundIndex++;
+            initRound();
+        }
+
+        function showFinalScore() {
+            document.getElementById('feedback-text').innerText = '🎉 Game Finished! 🎉';
+            document.getElementById('feedback-text').className = 'feedback text-blue-500 mb-10';
+            document.getElementById('modal-btn').innerText = 'Play Again?';
+            document.getElementById('modal-btn').onclick = () => window.location.reload();
+            document.getElementById('result-modal').style.display = 'flex';
+        }
+
+        window.onload = initRound;
+    </script>
+</body>
+</html>
